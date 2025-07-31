@@ -1,0 +1,54 @@
+# This is an example configuration file for the application.
+
+# Log level of the application.
+# Possible values: debug, info, warn, error
+log-level: info
+
+auth:
+  # OAuth2 client ID for the application.
+  client-id: "your-client-id"
+  # OAuth2 client secret for the application.
+  client-secret: "your-client-secret"
+  # OAuth2 authorization URL for the application.
+  token-url: "https://example.com/oauth2/token"
+  # User information URL for the application.
+  user-info-url: "https://example.com/oauth2/userinfo"
+  # JWT secret for signing tokens. Must not be empty.
+  jwt-secret: "your-jwt-secret"
+
+storage:
+  # Type of storage to use. Possible values: mysql, postgres, sqlite
+  type: sqlite
+  # Data Source Name (DSN) for the storage. Must not be empty.
+  dsn: "file:./.dinner-elo.db?cache=shared&mode=rwc"
+
+# HTTP configuration
+http:
+  # Address to listen on for HTTP requests. Defaults to listening on all interfaces on IPv4 and IPv6
+  # address: "::"
+  # URL where the HTTP server is deployed, used for redirects.
+  url: "http://localhost:8080"
+  # Port to listen on for HTTP requests. Defaults to 8080
+  port: 8080
+  # Trusted proxies for the HTTP server. Must be valid IPs or CIDR ranges.
+  # trusted-proxies:
+  #   - "192.168.1.1"
+  #   - "10.0.0.0/8"
+
+# Metrics configuration
+metrics:
+  # Enable or disable metrics collection. Defaults to false.
+  enabled: false
+  # Address to listen on for metrics requests. Defaults to listening on all interfaces on IPv4 and IPv6
+  # address: "::"
+  # Port to listen on for metrics requests. Defaults to 9090
+  # port: 9090
+
+# PProf configuration
+pprof:
+  # Enable or disable pprof. Defaults to false.
+  enabled: false
+  # Address to listen on for pprof requests. Must be a valid IP address.
+  # address: "::"
+  # Port to listen on for pprof requests. Defaults to 9999
+  # port: 9999

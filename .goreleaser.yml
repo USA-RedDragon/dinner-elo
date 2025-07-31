@@ -1,0 +1,28 @@
+---
+project_name: dinner-elo
+
+release:
+  extra_files:
+    - glob: ./LICENSE
+  github:
+    owner: USA-RedDragon
+    name: dinner-elo
+
+builds:
+  - main: .
+    binary: dinner-elo
+    hooks:
+      pre:
+      - go generate ./...
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+
+milestones:
+  - close: true
