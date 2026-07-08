@@ -1,6 +1,6 @@
 module github.com/USA-RedDragon/dinner-elo
 
-go 1.24.4
+go 1.25.0
 
 require (
 	github.com/USA-RedDragon/configulator v0.0.0-20250409213831-8d29f1f162be
@@ -13,7 +13,7 @@ require (
 	github.com/prometheus/client_golang v1.22.0
 	github.com/spf13/cobra v1.9.1
 	github.com/ztrue/shutdown v0.1.1
-	golang.org/x/sync v0.16.0
+	golang.org/x/sync v0.22.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.1
