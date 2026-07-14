@@ -8,7 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.10.1
 	github.com/glebarez/sqlite v1.11.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
-	github.com/lmittmann/tint v1.1.2
+	github.com/lmittmann/tint v1.2.0
 	github.com/mattn/go-nulltype v0.0.0-20230117041332-6715e831ac05
 	github.com/prometheus/client_golang v1.22.0
 	github.com/spf13/cobra v1.9.1
