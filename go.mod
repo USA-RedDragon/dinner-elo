@@ -12,7 +12,7 @@ require (
 	github.com/lmittmann/tint v1.1.2
 	github.com/mattn/go-nulltype v0.0.0-20230117041332-6715e831ac05
 	github.com/prometheus/client_golang v1.22.0
-	github.com/spf13/cobra v1.9.1
+	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/ztrue/shutdown v0.1.1
 	golang.org/x/sync v0.23.0
