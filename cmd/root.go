@@ -6,7 +6,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/USA-RedDragon/configulator"
+	"github.com/USA-RedDragon/configulator/v2"
 	"github.com/USA-RedDragon/dinner-elo/internal/config"
 	"github.com/USA-RedDragon/dinner-elo/internal/server"
 	"github.com/USA-RedDragon/dinner-elo/internal/store"

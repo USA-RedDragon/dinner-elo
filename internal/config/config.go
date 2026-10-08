@@ -1,5 +1,7 @@
 package config
 
+//go:generate go tool configulator -type Config
+
 import (
 	"errors"
 	"net"
@@ -78,7 +80,7 @@ var (
 	ErrInvalidAuthJWTSecret  = errors.New("invalid JWT secret provided, must not be empty")
 )
 
-//nolint:golint,gocyclo
+//nolint:gocyclo
 func (c Config) Validate() error {
 	if c.LogLevel != LogLevelDebug && c.LogLevel != LogLevelInfo && c.LogLevel != LogLevelWarn && c.LogLevel != LogLevelError {
 		return ErrInvalidLogLevel
