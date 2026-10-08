@@ -22,9 +22,29 @@ jobs:
           go-version-file: go.mod
       - run: go generate ./...
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: latest
           skip-cache: true
           # Show only new issues if it's a pull request. The default value is `false`.
           only-new-issues: ${{ github.event_name == 'pull_request' }}
+
+  config-docs:
+    name: config docs
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.AUTO_COMMIT_APP_ID }}
+          private-key: ${{ secrets.AUTO_COMMIT_APP_KEY }}
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+      - uses: USA-RedDragon/reusable-actions/configulator-docs@v2
+        with:
+          dir: internal/config
+          type: Config
+          git-user-name: usa-reddragon-auto-commit-bot[bot]
+          git-user-email: usa-reddragon-auto-commit-bot[bot]@users.noreply.github.com
