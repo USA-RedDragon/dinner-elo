@@ -11,6 +11,7 @@ import (
 	configulator "github.com/USA-RedDragon/configulator/v2"
 	cpflag "github.com/USA-RedDragon/configulator/v2/flags/pflag"
 	"github.com/spf13/pflag"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -59,7 +60,7 @@ func ConfigSchema() *configulator.Schema[Config] {
 		DecodeFile:    configDecodeFile,
 	}
 }
-func configApplyDefaults(cfg *Config, set configulator.SetOrigin) error {
+func configApplyDefaults(cfg *Config, sep string, set configulator.SetOrigin) error {
 	cfg.LogLevel = LogLevel("info")
 	set("log-level", configulator.LayerDefault, "default tag")
 	cfg.Storage.Type = StorageType("sqlite")
@@ -74,7 +75,7 @@ func configApplyDefaults(cfg *Config, set configulator.SetOrigin) error {
 	set("pprof.port", configulator.LayerDefault, "default tag")
 	return nil
 }
-func configDecodeFile(data []byte, u configulator.Unmarshal, cfg *Config, set configulator.SetOrigin, file string) error {
+func configDecodeFile(data []byte, u configulator.Unmarshal, cfg *Config, sep string, set configulator.SetOrigin, file string) error {
 	var sh configShadow
 	if err := u(data, &sh); err != nil {
 		return &configulator.DecodeError{
@@ -82,9 +83,9 @@ func configDecodeFile(data []byte, u configulator.Unmarshal, cfg *Config, set co
 			Path: file,
 		}
 	}
-	return sh.applyTo(cfg, set, file)
+	return sh.applyTo(cfg, sep, set, file)
 }
-func (s *configShadow) applyTo(cfg *Config, set configulator.SetOrigin, file string) error {
+func (s *configShadow) applyTo(cfg *Config, sep string, set configulator.SetOrigin, file string) error {
 	if s.LogLevel != nil {
 		cfg.LogLevel = LogLevel(*s.LogLevel)
 		set("log-level", configulator.LayerFile, file)
@@ -217,7 +218,8 @@ func configApplyEnv(cfg *Config, ec configulator.EnvContext, set configulator.Se
 	}
 	if n := configulator.EnvName(ec.Opts.Prefix, ec.Opts.Separator, "http", "trusted-proxies"); true {
 		if v, ok := ec.Getenv(n); ok {
-			cfg.HTTP.TrustedProxies = configulator.SplitList(v, ec.ArraySeparator)
+			lst := configulator.SplitList(v, ec.ArraySeparator)
+			cfg.HTTP.TrustedProxies = lst
 			set("http.trusted-proxies", configulator.LayerEnv, n)
 		}
 	}
@@ -334,32 +336,36 @@ func ConfigPFlagHooks() cpflag.Hooks[Config] {
 	}
 }
 func configRegisterPFlags(fs *pflag.FlagSet, o *cpflag.Options) error {
-	for _, name := range []string{strings.Join([]string{"log-level"}, o.Separator), strings.Join([]string{"storage", "type"}, o.Separator), strings.Join([]string{"storage", "dsn"}, o.Separator), strings.Join([]string{"http", "url"}, o.Separator), strings.Join([]string{"http", "address"}, o.Separator), strings.Join([]string{"http", "port"}, o.Separator), strings.Join([]string{"http", "trusted-proxies"}, o.Separator), strings.Join([]string{"metrics", "enabled"}, o.Separator), strings.Join([]string{"metrics", "address"}, o.Separator), strings.Join([]string{"metrics", "port"}, o.Separator), strings.Join([]string{"pprof", "enabled"}, o.Separator), strings.Join([]string{"pprof", "address"}, o.Separator), strings.Join([]string{"pprof", "port"}, o.Separator), strings.Join([]string{"auth", "jwt-secret"}, o.Separator), strings.Join([]string{"auth", "client-id"}, o.Separator), strings.Join([]string{"auth", "client-secret"}, o.Separator), strings.Join([]string{"auth", "token-url"}, o.Separator), strings.Join([]string{"auth", "user-url"}, o.Separator)} {
-		if fs.Lookup(name) != nil {
-			return fmt.Errorf("flag --%s already registered on this FlagSet", name)
+	names := []string{strings.Join([]string{"log-level"}, o.Separator), strings.Join([]string{"storage", "type"}, o.Separator), strings.Join([]string{"storage", "dsn"}, o.Separator), strings.Join([]string{"http", "url"}, o.Separator), strings.Join([]string{"http", "address"}, o.Separator), strings.Join([]string{"http", "port"}, o.Separator), strings.Join([]string{"http", "trusted-proxies"}, o.Separator), strings.Join([]string{"metrics", "enabled"}, o.Separator), strings.Join([]string{"metrics", "address"}, o.Separator), strings.Join([]string{"metrics", "port"}, o.Separator), strings.Join([]string{"pprof", "enabled"}, o.Separator), strings.Join([]string{"pprof", "address"}, o.Separator), strings.Join([]string{"pprof", "port"}, o.Separator), strings.Join([]string{"auth", "jwt-secret"}, o.Separator), strings.Join([]string{"auth", "client-id"}, o.Separator), strings.Join([]string{"auth", "client-secret"}, o.Separator), strings.Join([]string{"auth", "token-url"}, o.Separator), strings.Join([]string{"auth", "user-url"}, o.Separator)}
+	for i, name := range names {
+		if fs.Lookup(name) != nil || slices.Contains(names[:i], name) {
+			return &configulator.FlagConflictError{
+				Existing: name,
+				Flag:     name,
+			}
 		}
 	}
-	fs.String(strings.Join([]string{"log-level"}, o.Separator), "info", "Logging level for the application. One of debug, info, warn, or error")
-	fs.String(strings.Join([]string{"storage", "type"}, o.Separator), "sqlite", "Storage type. One of mysql, postgres, sqlite")
-	fs.String(strings.Join([]string{"storage", "dsn"}, o.Separator), "file:./.dinner-elo.db?cache=shared&mode=rwc", "Data source name for the storage")
-	fs.String(strings.Join([]string{"http", "url"}, o.Separator), "", "URL where the HTTP server is deployed, used for redirects")
-	fs.String(strings.Join([]string{"http", "address"}, o.Separator), "", "Address to listen on")
-	fs.Int(strings.Join([]string{"http", "port"}, o.Separator), 8080, "Port to listen on")
-	fs.StringSlice(strings.Join([]string{"http", "trusted-proxies"}, o.Separator), nil, "Trusted proxies for the HTTP server")
-	fs.Bool(strings.Join([]string{"metrics", "enabled"}, o.Separator), false, "Enable metrics server")
-	fs.String(strings.Join([]string{"metrics", "address"}, o.Separator), "", "Address to listen on")
-	fs.Int(strings.Join([]string{"metrics", "port"}, o.Separator), 9000, "Port to listen on")
-	fs.Bool(strings.Join([]string{"pprof", "enabled"}, o.Separator), false, "Enable pprof server")
-	fs.String(strings.Join([]string{"pprof", "address"}, o.Separator), "", "Address to listen on")
-	fs.Int(strings.Join([]string{"pprof", "port"}, o.Separator), 9999, "Port to listen on")
-	fs.String(strings.Join([]string{"auth", "jwt-secret"}, o.Separator), "", "JWT secret for signing tokens")
-	fs.String(strings.Join([]string{"auth", "client-id"}, o.Separator), "", "Client ID for authentication")
-	fs.String(strings.Join([]string{"auth", "client-secret"}, o.Separator), "", "Client secret for authentication")
-	fs.String(strings.Join([]string{"auth", "token-url"}, o.Separator), "", "Token URL for authentication")
-	fs.String(strings.Join([]string{"auth", "user-url"}, o.Separator), "", "User URL for authentication")
+	fs.String(names[0], "info", "Logging level for the application. One of debug, info, warn, or error")
+	fs.String(names[1], "sqlite", "Storage type. One of mysql, postgres, sqlite")
+	fs.String(names[2], "file:./.dinner-elo.db?cache=shared&mode=rwc", "Data source name for the storage")
+	fs.String(names[3], "", "URL where the HTTP server is deployed, used for redirects. Required")
+	fs.String(names[4], "", "IP address to listen on. Empty listens on all interfaces")
+	fs.Int(names[5], 8080, "Port to listen on")
+	fs.StringSlice(names[6], nil, "Trusted proxies for the HTTP server")
+	fs.Bool(names[7], false, "Enable metrics server")
+	fs.String(names[8], "", "Address to listen on")
+	fs.Int(names[9], 9000, "Port to listen on")
+	fs.Bool(names[10], false, "Enable pprof server")
+	fs.String(names[11], "", "Address to listen on")
+	fs.Int(names[12], 9999, "Port to listen on")
+	fs.String(names[13], "", "JWT secret for signing tokens. Required")
+	fs.String(names[14], "", "OAuth2 client ID")
+	fs.String(names[15], "", "OAuth2 client secret")
+	fs.String(names[16], "", "OAuth2 token URL, e.g. https://example.com/oauth2/token")
+	fs.String(names[17], "", "OAuth2 user information URL, e.g. https://example.com/oauth2/userinfo")
 	return nil
 }
-func configApplyPFlags(cfg *Config, fs *pflag.FlagSet, o *cpflag.Options, set configulator.SetOrigin) error {
+func configApplyPFlags(cfg *Config, fs *pflag.FlagSet, o *cpflag.Options, sep string, set configulator.SetOrigin) error {
 	if n := strings.Join([]string{"log-level"}, o.Separator); fs.Changed(n) {
 		v, err := fs.GetString(n)
 		if err != nil {
@@ -1069,9 +1075,9 @@ func (c *Config) PrintConfig() string {
 	b.WriteString(fmt.Sprintf("pprof.enabled = %v\n", c.PProf.Enabled))
 	b.WriteString(fmt.Sprintf("pprof.address = %v\n", c.PProf.Address))
 	b.WriteString(fmt.Sprintf("pprof.port = %v\n", c.PProf.Port))
-	b.WriteString(fmt.Sprintf("auth.jwt-secret = %v\n", c.Auth.JWTSecret))
+	b.WriteString("auth.jwt-secret = (redacted)\n")
 	b.WriteString(fmt.Sprintf("auth.client-id = %v\n", c.Auth.ClientID))
-	b.WriteString(fmt.Sprintf("auth.client-secret = %v\n", c.Auth.ClientSecret))
+	b.WriteString("auth.client-secret = (redacted)\n")
 	b.WriteString(fmt.Sprintf("auth.token-url = %v\n", c.Auth.TokenURL))
 	b.WriteString(fmt.Sprintf("auth.user-url = %v\n", c.Auth.UserURL))
 	return b.String()

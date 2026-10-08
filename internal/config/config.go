@@ -26,16 +26,16 @@ type Config struct {
 }
 
 type Auth struct {
-	JWTSecret    string `name:"jwt-secret" description:"JWT secret for signing tokens"`
-	ClientID     string `name:"client-id" description:"Client ID for authentication"`
-	ClientSecret string `name:"client-secret" description:"Client secret for authentication"`
-	TokenURL     string `name:"token-url" description:"Token URL for authentication"`
-	UserURL      string `name:"user-url" description:"User URL for authentication"`
+	JWTSecret    string `name:"jwt-secret" secret:"true" description:"JWT secret for signing tokens. Required"`
+	ClientID     string `name:"client-id" description:"OAuth2 client ID"`
+	ClientSecret string `name:"client-secret" secret:"true" description:"OAuth2 client secret"`
+	TokenURL     string `name:"token-url" description:"OAuth2 token URL, e.g. https://example.com/oauth2/token"`
+	UserURL      string `name:"user-url" description:"OAuth2 user information URL, e.g. https://example.com/oauth2/userinfo"`
 }
 
 type HTTP struct {
-	URL            string   `name:"url" description:"URL where the HTTP server is deployed, used for redirects"`
-	Address        string   `name:"address" description:"Address to listen on"`
+	URL            string   `name:"url" description:"URL where the HTTP server is deployed, used for redirects. Required"`
+	Address        string   `name:"address" description:"IP address to listen on. Empty listens on all interfaces"`
 	Port           int      `name:"port" description:"Port to listen on" default:"8080"`
 	TrustedProxies []string `name:"trusted-proxies" description:"Trusted proxies for the HTTP server"`
 }

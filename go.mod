@@ -3,7 +3,7 @@ module github.com/USA-RedDragon/dinner-elo
 go 1.27
 
 require (
-	github.com/USA-RedDragon/configulator/v2 v2.1.0
+	github.com/USA-RedDragon/configulator/v2 v2.3.0
 	github.com/gin-contrib/pprof v1.5.3
 	github.com/gin-gonic/gin v1.10.1
 	github.com/glebarez/sqlite v1.11.0
