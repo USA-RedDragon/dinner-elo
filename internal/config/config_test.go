@@ -75,3 +75,32 @@ func TestValidate(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateTrustedProxies(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		proxies []string
+		want    error
+	}{
+		{name: "ipv4", proxies: []string{"10.0.0.1"}},
+		{name: "ipv6", proxies: []string{"::1"}},
+		{name: "cidr v4", proxies: []string{"10.0.0.0/8"}},
+		{name: "cidr v6", proxies: []string{"fd00::/8"}},
+		{name: "mixed", proxies: []string{"172.16.0.0/12", "192.168.1.1", "2001:db8::/32", "fe80::1"}},
+		{name: "invalid", proxies: []string{"not-an-ip"}, want: config.ErrInvalidTrustedProxies},
+		{name: "invalid cidr prefix", proxies: []string{"10.0.0.0/33"}, want: config.ErrInvalidTrustedProxies},
+		{name: "invalid after valid", proxies: []string{"192.168.0.0/16", "300.1.1.1"}, want: config.ErrInvalidTrustedProxies},
+		{name: "empty entry", proxies: []string{""}, want: config.ErrInvalidTrustedProxies},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			cfg := validConfig(t)
+			cfg.HTTP.TrustedProxies = tt.proxies
+			if err := cfg.Validate(); !errors.Is(err, tt.want) {
+				t.Errorf("Validate() = %v, want %v", err, tt.want)
+			}
+		})
+	}
+}

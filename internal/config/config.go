@@ -4,6 +4,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"net"
 )
 
@@ -114,18 +115,12 @@ func (c Config) Validate() error {
 		return ErrInvalidPProfAddress
 	}
 
-	if len(c.HTTP.TrustedProxies) > 0 {
-		for _, proxy := range c.HTTP.TrustedProxies {
-			ip := net.ParseIP(proxy)
-			if ip == nil {
-				_, _, err := net.ParseCIDR(proxy)
-				if err != nil {
-					return ErrInvalidTrustedProxies
-				}
-			}
-			if ip.To4() == nil && ip.To16() == nil {
-				return ErrInvalidTrustedProxies
-			}
+	for _, proxy := range c.HTTP.TrustedProxies {
+		if net.ParseIP(proxy) != nil {
+			continue
+		}
+		if _, _, err := net.ParseCIDR(proxy); err != nil {
+			return fmt.Errorf("%w: %q", ErrInvalidTrustedProxies, proxy)
 		}
 	}
 
