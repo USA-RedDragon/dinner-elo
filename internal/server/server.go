@@ -88,8 +88,9 @@ func NewServer(config *config.Config, store store.Store) *Server {
 
 func (s *Server) Start() error {
 	waitGrp := sync.WaitGroup{}
+	listenConfig := net.ListenConfig{}
 	if s.server != nil {
-		listener, err := net.Listen("tcp", s.server.Addr)
+		listener, err := listenConfig.Listen(context.Background(), "tcp", s.server.Addr)
 		if err != nil {
 			return err
 		}
@@ -105,7 +106,7 @@ func (s *Server) Start() error {
 
 	if s.config.Metrics.Enabled {
 		if s.metricsServer != nil {
-			metricsListener, err := net.Listen("tcp", s.metricsServer.Addr)
+			metricsListener, err := listenConfig.Listen(context.Background(), "tcp", s.metricsServer.Addr)
 			if err != nil {
 				return err
 			}
@@ -123,7 +124,7 @@ func (s *Server) Start() error {
 
 	if s.config.PProf.Enabled {
 		if s.pprofServer != nil {
-			pprofListener, err := net.Listen("tcp", s.pprofServer.Addr)
+			pprofListener, err := listenConfig.Listen(context.Background(), "tcp", s.pprofServer.Addr)
 			if err != nil {
 				return err
 			}

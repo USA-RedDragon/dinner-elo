@@ -17,24 +17,29 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	errorKey         = "error"
+	errTryAgainLater = "Try again later"
+)
+
 func Auth(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "code is required"})
+		c.JSON(http.StatusBadRequest, gin.H{errorKey: "code is required"})
 		return
 	}
 
 	config, ok := c.MustGet("config").(*config.Config)
 	if !ok {
 		slog.Error("Failed to get config from context")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Try again later"})
+		c.JSON(http.StatusInternalServerError, gin.H{errorKey: errTryAgainLater})
 		return
 	}
 
 	store, ok := c.MustGet("store").(store.Store)
 	if !ok {
 		slog.Error("Failed to get store from context")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Try again later"})
+		c.JSON(http.StatusInternalServerError, gin.H{errorKey: errTryAgainLater})
 		return
 	}
 
@@ -52,14 +57,14 @@ func Auth(c *gin.Context) {
 	})
 	if err != nil {
 		slog.Error("Failed to request token", "error", err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to request token"})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{errorKey: "Failed to request token"})
 		return
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		slog.Debug("Token request data", "data", urldata.Encode())
 		slog.Error("Failed to request token", "status", resp.Status)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to request token"})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{errorKey: "Failed to request token"})
 		return
 	}
 
@@ -70,14 +75,14 @@ func Auth(c *gin.Context) {
 	err = json.NewDecoder(resp.Body).Decode(&tokenResponse)
 	if err != nil {
 		slog.Error("Failed to decode response", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Try again later"})
+		c.JSON(http.StatusInternalServerError, gin.H{errorKey: errTryAgainLater})
 		return
 	}
 
 	id, err := apis.GetSSOUserID(c, config.Auth.UserURL, tokenResponse.AccessToken)
 	if err != nil {
 		slog.Error("Failed to get SSO user ID", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Try again later"})
+		c.JSON(http.StatusInternalServerError, gin.H{errorKey: errTryAgainLater})
 		return
 	}
 
@@ -88,18 +93,18 @@ func Auth(c *gin.Context) {
 			err := store.CreateUser(nulltype.NullInt64Of(id))
 			if err != nil {
 				slog.Error("Failed to create user", "error", err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Try again later"})
+				c.JSON(http.StatusInternalServerError, gin.H{errorKey: errTryAgainLater})
 				return
 			}
 			user, err = store.FindUserBySSOID(id)
 			if err != nil {
 				slog.Error("Failed to find user", "error", err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Try again later"})
+				c.JSON(http.StatusInternalServerError, gin.H{errorKey: errTryAgainLater})
 				return
 			}
 		} else {
 			slog.Error("Failed to register or login user", "error", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Try again later"})
+			c.JSON(http.StatusInternalServerError, gin.H{errorKey: errTryAgainLater})
 			return
 		}
 	}
@@ -107,7 +112,7 @@ func Auth(c *gin.Context) {
 	token, err := utils.GenerateJWT(config.Auth.JWTSecret, user.ID)
 	if err != nil {
 		slog.Error("Failed to generate JWT", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Try again later"})
+		c.JSON(http.StatusInternalServerError, gin.H{errorKey: errTryAgainLater})
 		return
 	}
 

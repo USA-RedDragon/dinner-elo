@@ -10,6 +10,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	errorKey               = "error"
+	errUnauthorized        = "Unauthorized"
+	errInternalServerError = "Internal Server Error"
+)
+
 func applyMiddleware(r *gin.Engine, config *config.Config) {
 	r.Use(gin.Recovery())
 	r.Use(gin.Logger())
@@ -27,7 +33,7 @@ func requireLogin(config *config.Config) gin.HandlerFunc {
 		if len(possibleTokenCookies) == 0 {
 			// No token found in cookies
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "Unauthorized",
+				errorKey: errUnauthorized,
 			})
 			return
 		}
@@ -35,7 +41,7 @@ func requireLogin(config *config.Config) gin.HandlerFunc {
 			// Multiple tokens found, this is unexpected
 			slog.Error("Multiple tokens found in cookies, this is unexpected", "count", len(possibleTokenCookies))
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"error": "Internal Server Error",
+				errorKey: errInternalServerError,
 			})
 			return
 		}
@@ -44,7 +50,7 @@ func requireLogin(config *config.Config) gin.HandlerFunc {
 		if tokenCookie.Value == "" {
 			// Token is empty, unauthorized
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "Unauthorized",
+				errorKey: errUnauthorized,
 			})
 			return
 		}
@@ -54,7 +60,7 @@ func requireLogin(config *config.Config) gin.HandlerFunc {
 			// Token verification failed, unauthorized
 			slog.Error("Failed to verify JWT", "error", err.Error())
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "Unauthorized",
+				errorKey: errUnauthorized,
 			})
 			return
 		}
@@ -64,7 +70,7 @@ func requireLogin(config *config.Config) gin.HandlerFunc {
 		if !ok {
 			slog.Error("Failed to get store from context")
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"error": "Internal Server Error",
+				errorKey: errInternalServerError,
 			})
 			return
 		}
@@ -72,7 +78,7 @@ func requireLogin(config *config.Config) gin.HandlerFunc {
 		if err != nil {
 			slog.Error("Failed to find user by ID", "error", err.Error())
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"error": "Internal Server Error",
+				errorKey: errInternalServerError,
 			})
 			return
 		}
@@ -85,7 +91,7 @@ func requireLogin(config *config.Config) gin.HandlerFunc {
 
 		// JWT is valid but user does not exist in the database
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
+			errorKey: errUnauthorized,
 		})
 	}
 }
